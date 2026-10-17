@@ -1,0 +1,9 @@
+{
+  "game": "Peek-a-Vroom",
+  "source_commit": "e0715efc903198d76579f7af9be5a0f99de8b076",
+  "godot": "4.7.stable.official.5b4e0cb0f",
+  "template": "4.7.stable web_nothreads_release",
+  "threads": false,
+  "runtime_package_sha256": "09ac2dc4b527f70c0ef74e289cc8a073d3018548b49b82c7b1a955bd0e87f334",
+  "wasm_sha256": "7eda98958eb09135a1acb54a4323a00b1a55af1997f15fa1cdc2b93e3df46656"
+}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#fff8e7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>藏藏车 · 网页试玩</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff8e7;overscroll-behavior:none}body{font-family:system-ui,sans-serif;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);display:flex;justify-content:center}#stage{height:100%;width:100%;max-width:56.25dvh;position:relative;background:#87ceeb}canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}#cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#fff8e7ee;color:#226b91;text-align:center;padding:24px}#cover.play{background:#fff8e74d;justify-content:flex-end;padding-bottom:8vh}#status{font-size:17px;line-height:1.6}button{font:700 20px system-ui,sans-serif;color:#226b91;background:#fff8e7;border:2px solid #226b91;border-radius:20px;padding:16px 28px;box-shadow:0 5px 0 #226b9140;touch-action:manipulation}button[hidden],#cover[hidden]{display:none}#progress{accent-color:#226b91;max-width:80%;width:220px;height:12px}#note{font-size:12px;line-height:1.6;max-width:26em}#resume{position:absolute;right:12px;top:12px;font-size:14px;padding:10px;display:none}
+</style>
+<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
+
+</head>
+<body>
+<main id="stage"><canvas id="canvas" tabindex="0" aria-label="藏藏车游戏"></canvas><div id="cover"><div id="status" role="status">正在加载藏藏车…</div><progress id="progress"></progress><button id="play" hidden>轻点进入 · Tap to play</button><div id="note">首次加载请稍候。进度保存在当前浏览器；请避免无痕模式。</div></div></main>
+<script>
+(() => {
+  // Unlock Godot's existing Web Audio context from the visible, trusted start tap.
+  const audioContexts=new Set();
+  for(const name of ['AudioContext','webkitAudioContext']){
+    const NativeAudioContext=window[name];
+    if(NativeAudioContext){window[name]=new Proxy(NativeAudioContext,{construct(target,args){
+      const context=Reflect.construct(target,args);audioContexts.add(context);return context;
+    }});}
+  }
+  const unlockAudio=()=>{for(const context of audioContexts){
+    if(context.state==='suspended')context.resume().catch(()=>{});
+  }};
+  for(const event of ['pointerdown','touchend','keydown'])document.addEventListener(event,unlockAudio,{capture:true,passive:true});
+})();
+</script>
+<script src="index.js"></script>
+<script>
+'use strict';
+const config={"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":73354320,"index.wasm":39509339},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const canvas=document.getElementById('canvas'),stage=document.getElementById('stage'),cover=document.getElementById('cover'),status=document.getElementById('status'),progress=document.getElementById('progress'),play=document.getElementById('play');
+function resize(){const box=stage.getBoundingClientRect();const scale=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(box.width*scale);canvas.height=Math.round(box.height*scale);}
+new ResizeObserver(resize).observe(stage);resize();
+const engine=new Engine(config);
+const missing=Engine.getMissingFeatures({threads:false});
+if(missing.length){status.textContent='此浏览器暂不支持游戏：'+missing.join(', ');progress.hidden=true;}
+else engine.startGame({canvas,canvasResizePolicy:0,onProgress:(loaded,total)=>{if(total>0){progress.max=total;progress.value=loaded;status.textContent='正在加载藏藏车… '+Math.round(loaded/total*100)+'%';}},onPrintError:(text)=>console.warn(text)}).then(()=>{status.hidden=true;progress.hidden=true;document.getElementById('note').hidden=true;cover.classList.add('play');play.hidden=false;}).catch(error=>{progress.hidden=true;status.textContent='加载未完成，请刷新重试。'+error.message;console.error(error);});
+play.addEventListener('click',()=>{cover.hidden=true;canvas.focus();});
+canvas.addEventListener('contextmenu',event=>event.preventDefault());
+</script>
+</body></html>
