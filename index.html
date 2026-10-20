@@ -12,29 +12,87 @@
 <link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
 
+<style>
+button{transition:transform 90ms ease-out}button:active{transform:scale(.965)}
+@media(hover:hover) and (pointer:fine){button:hover{transform:scale(1.012)}button:active{transform:scale(.965)}}
+</style>
 </head>
 <body>
 <main id="stage"><canvas id="canvas" tabindex="0" aria-label="藏藏车游戏"></canvas><div id="cover"><div id="status" role="status">正在加载藏藏车…</div><progress id="progress"></progress><button id="play" hidden>轻点进入 · Tap to play</button><div id="note">首次加载请稍候。进度保存在当前浏览器；请避免无痕模式。</div></div></main>
 <script>
 (() => {
-  // Unlock Godot's existing Web Audio context from the visible, trusted start tap.
+  // A short output gate covers the suspended Web Audio buffer as well as the
+  // first Godot frame. Safari can interrupt audio while gameplay is not ticking.
   const audioContexts=new Set();
+  const gates=new WeakMap();
+  const nativeConnect=AudioNode.prototype.connect;
+  const nativeDisconnect=AudioNode.prototype.disconnect;
+  AudioNode.prototype.connect=function(destination,...args){
+    const gate=gates.get(this.context);
+    const routed=gate&&destination===this.context.destination&&this!==gate.node?gate.node:destination;
+    const result=nativeConnect.call(this,routed,...args);
+    return routed!==destination&&result===routed?destination:result;
+  };
+  AudioNode.prototype.disconnect=function(...args){
+    const gate=gates.get(this.context);
+    if(args.length&&gate&&args[0]===this.context.destination&&this!==gate.node)args[0]=gate.node;
+    return nativeDisconnect.apply(this,args);
+  };
+  const quiet=context=>{
+    const gate=gates.get(context);if(!gate||context.state==='closed')return;
+    gate.active=false;
+    gate.node.gain.cancelScheduledValues(context.currentTime);
+    gate.node.gain.setValueAtTime(0,context.currentTime);
+  };
+  const recover=context=>{
+    const gate=gates.get(context);if(!gate)return;
+    if(context.state!=='running'||document.hidden){quiet(context);return;}
+    if(gate.active)return;
+    gate.active=true;
+    gate.node.gain.cancelScheduledValues(context.currentTime);
+    gate.node.gain.setValueAtTime(0,context.currentTime);
+    gate.node.gain.linearRampToValueAtTime(1,context.currentTime+.24);
+  };
   for(const name of ['AudioContext','webkitAudioContext']){
     const NativeAudioContext=window[name];
     if(NativeAudioContext){window[name]=new Proxy(NativeAudioContext,{construct(target,args){
-      const context=Reflect.construct(target,args);audioContexts.add(context);return context;
+      const context=Reflect.construct(target,args);
+      const node=context.createGain();node.gain.value=0;
+      nativeConnect.call(node,context.destination);
+      gates.set(context,{node,active:false});audioContexts.add(context);
+      const resume=context.resume.bind(context);
+      context.resume=()=>{
+        // Engines may call resume on every click, even while already running.
+        // An ordinary button tap must not dip the continuing music.
+        if(context.state!=='running')quiet(context);
+        return resume().then(()=>recover(context));
+      };
+      context.addEventListener('statechange',()=>{
+        if(context.state==='closed')audioContexts.delete(context);
+        else recover(context);
+      });
+      recover(context);return context;
     }});}
   }
   const unlockAudio=()=>{for(const context of audioContexts){
-    if(context.state==='suspended')context.resume().catch(()=>{});
+    if(document.hidden)continue;
+    if(context.state==='suspended'||context.state==='interrupted')context.resume().catch(()=>{});
+    else recover(context);
+  }};
+  const pauseAudio=()=>{for(const context of audioContexts){
+    quiet(context);
+    if(context.state==='running')context.suspend().catch(()=>{});
   }};
   for(const event of ['pointerdown','touchend','keydown'])document.addEventListener(event,unlockAudio,{capture:true,passive:true});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseAudio();else unlockAudio();});
+  window.addEventListener('pagehide',pauseAudio);
+  window.addEventListener('pageshow',unlockAudio);
 })();
 </script>
 <script src="index.js"></script>
 <script>
 'use strict';
-const config={"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":55083420,"index.wasm":39509339},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const config={"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":55139828,"index.wasm":39509339},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const canvas=document.getElementById('canvas'),stage=document.getElementById('stage'),cover=document.getElementById('cover'),status=document.getElementById('status'),progress=document.getElementById('progress'),play=document.getElementById('play');
 function resize(){const box=stage.getBoundingClientRect();const scale=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(box.width*scale);canvas.height=Math.round(box.height*scale);}
 new ResizeObserver(resize).observe(stage);resize();
@@ -42,7 +100,7 @@ const engine=new Engine(config);
 const missing=Engine.getMissingFeatures({threads:false});
 if(missing.length){status.textContent='此浏览器暂不支持游戏：'+missing.join(', ');progress.hidden=true;}
 else engine.startGame({canvas,canvasResizePolicy:0,onProgress:(loaded,total)=>{if(total>0){progress.max=total;progress.value=loaded;status.textContent='正在加载藏藏车… '+Math.round(loaded/total*100)+'%';}},onPrintError:(text)=>console.warn(text)}).then(()=>{status.hidden=true;progress.hidden=true;document.getElementById('note').hidden=true;cover.classList.add('play');play.hidden=false;}).catch(error=>{progress.hidden=true;status.textContent='加载未完成，请刷新重试。'+error.message;console.error(error);});
-play.addEventListener('click',()=>{cover.hidden=true;canvas.focus();});
+play.addEventListener('click',()=>{cover.style.pointerEvents='none';canvas.focus();cover.animate([{opacity:1},{opacity:0}],{duration:120,easing:'ease-out'}).finished.then(()=>cover.hidden=true).catch(()=>cover.hidden=true);});
 canvas.addEventListener('contextmenu',event=>event.preventDefault());
 </script>
 </body></html>

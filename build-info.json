@@ -1,13 +1,13 @@
 {
   "game": "Peek-a-Vroom",
-  "release": "2026-10-17-lossless",
-  "source_commit": "e083210dd46403e41beb599d1da82999839e4d57",
-  "source_base_commit": "e0715efc903198d76579f7af9be5a0f99de8b076",
+  "release": "2026-10-20-motion-answer-audio",
+  "source_commit": "25f0267619ebbade51af0759d5a60d730f67c14d",
+  "previous_public_source_commit": "e083210dd46403e41beb599d1da82999839e4d57",
   "godot": "4.7.stable.official.5b4e0cb0f",
   "template": "4.7.stable web_nothreads_release",
   "threads": false,
-  "runtime_package_sha256": "270f15935e14b8e98ce71b09e13ce3e35b85a4afe222e8306aa45f65441e3acc",
-  "runtime_package_bytes": 55083420,
+  "runtime_package_sha256": "7637b267da95ab6625602e975500c8c6413d13579c8621ceff234cce85cdcace",
+  "runtime_package_bytes": 55139828,
   "wasm_sha256": "7eda98958eb09135a1acb54a4323a00b1a55af1997f15fa1cdc2b93e3df46656",
   "wasm_bytes": 39509339,
   "optimization": "16 unused texture exclusions; full-resolution lossless WebP method 4 factor 100"
