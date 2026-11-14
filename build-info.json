@@ -1,14 +1,14 @@
 {
   "game": "Peek-a-Vroom",
-  "release": "2026-11-07-collection-details",
-  "source_commit": "8c30d221de6d965870974fc41b9e63bd130156f3",
-  "previous_public_source_commit": "25f0267619ebbade51af0759d5a60d730f67c14d",
+  "release": "2026-11-14-web-readiness",
+  "source_commit": "6f99db31f5d378acda6e76c2a71e33642632bf1c",
+  "previous_public_source_commit": "8c30d221de6d965870974fc41b9e63bd130156f3",
   "godot": "4.7.stable.official.5b4e0cb0f",
   "template": "4.7.stable web_nothreads_release",
   "threads": false,
-  "runtime_package_sha256": "4c4fb1cfea67ce9e349d969f524e5c11230d4aa16ee418cee9d2927dc1efbdb3",
-  "runtime_package_bytes": 60783464,
+  "runtime_package_sha256": "d2426b9d7a6cd3b55ff050971340eda4e19a4d2a93d666778574d0d9021eb682",
+  "runtime_package_bytes": 27894152,
   "wasm_sha256": "7eda98958eb09135a1acb54a4323a00b1a55af1997f15fa1cdc2b93e3df46656",
   "wasm_bytes": 39509339,
-  "optimization": "16 unused texture exclusions; full-resolution lossless WebP method 4 factor 100"
+  "optimization": "Shared Web build: full-resolution quality 0.9 compression for large textures; unchanged audio; browser language detection and persisted Chinese/English loading entry"
 }
