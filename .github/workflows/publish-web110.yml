@@ -1,0 +1,55 @@
+name: Publish verified Web 1.1.0
+on:
+  push:
+    branches: [main]
+    paths: ['.deploy/web110/**', '.github/workflows/publish-web110.yml']
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble and verify exported game
+        run: |
+          python3 - <<'PY'
+          import pathlib,json,hashlib,shutil
+          root=pathlib.Path('.'); stage=root/'.deploy/web110'; out=root/'_site';out.mkdir()
+          info=json.loads((stage/'build-info.json').read_text())
+          data=b''.join((stage/('pck.part'+str(i))).read_bytes() for i in range(3))
+          assert hashlib.sha256(data).hexdigest()=='a0c3d65702f10e7f44df7dabf88f9f883e485a9c80a36d96c0a47c4d65951ca4'
+          (out/'index.pck').write_bytes(data)
+          for name,entry in info['files'].items():
+              if name=='index.pck':continue
+              src=stage/name if (stage/name).exists() else root/name
+              shutil.copyfile(src,out/name)
+          for name,entry in info['files'].items():
+              f=out/name
+              assert f.stat().st_size==entry['bytes'],name
+              assert hashlib.sha256(f.read_bytes()).hexdigest()==entry['sha256'],name
+          shutil.copyfile(stage/'build-info.json',out/'build-info.json')
+          shutil.copyfile(stage/'THIRD_PARTY_LICENSES.txt',out/'THIRD_PARTY_LICENSES.txt')
+          (out/'.nojekyll').touch()
+          PY
+      - name: Persist verified release in publishing branch
+        run: |
+          cp _site/* .
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.pck index.html build-info.json optimization.json THIRD_PARTY_LICENSES.txt
+          git commit -m "Publish verified Godot Web 1.1.0 game and mix"
+          git push origin HEAD:main
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy verified site
+        id: deployment
+        uses: actions/deploy-pages@v4
