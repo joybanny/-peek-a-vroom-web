@@ -351,3 +351,10 @@ License: GPL-3+
  .
  On Debian systems, the complete text of the GNU General
  Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
+
+MUSIC ATTRIBUTION
+Background music created with Suno by stingingwallofsound414:
+- Welcome to the Game: https://suno.com/song/821db48a-0c29-48ed-8436-ed80022887c3
+- Quiet Curiosity
+- Toy Car Race (super-mode arrangement): https://suno.com/song/cb1a117c-33aa-434e-ae77-4300a3cbd530
+Music is not included in the engine or font open-source licenses above.
