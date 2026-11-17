@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta name="peek-build" content="1.1.1 / 3f1d248">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#fff8e7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Peek-a-Vroom</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff8e7;overscroll-behavior:none}body{font-family:system-ui,sans-serif;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);display:flex;justify-content:center}#stage{height:100%;width:100%;max-width:56.25dvh;position:relative;background:#87ceeb}canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}#cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#fff8e7ee;color:#226b91;text-align:center;padding:24px}#cover.play{background:#fff8e74d;justify-content:flex-end;padding-bottom:8vh}#status{font-size:17px;line-height:1.6}button{font:700 20px system-ui,sans-serif;color:#226b91;background:#fff8e7;border:2px solid #226b91;border-radius:20px;padding:16px 28px;box-shadow:0 5px 0 #226b9140;touch-action:manipulation}button[hidden],#cover[hidden]{display:none}#progress{accent-color:#226b91;max-width:80%;width:220px;height:12px}#note{font-size:12px;line-height:1.6;max-width:26em}#resume{position:absolute;right:12px;top:12px;font-size:14px;padding:10px;display:none}
+</style>
+<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
+
+<style>
+button{transition:transform 90ms ease-out}button:active{transform:scale(.965)}
+@media(hover:hover) and (pointer:fine){button:hover{transform:scale(1.012)}button:active{transform:scale(.965)}}
+</style>
+</head>
+<body>
+<main id="stage"><canvas id="canvas" tabindex="0" aria-label="藏藏车游戏"></canvas><div id="cover"><label id="language-label" style="position:absolute;top:16px;right:16px;font-size:14px">🌐 <select id="language" aria-label="Language / 语言" style="font:inherit;padding:8px;border-radius:10px;background:#fff8e7;color:#226b91"><option value="zh">中文</option><option value="en">English</option></select></label><div id="status" role="status">正在加载藏藏车…</div><progress id="progress"></progress><button id="play" hidden>轻点进入 · Tap to play</button><div id="note">首次加载请稍候。进度保存在当前浏览器；请避免无痕模式。</div></div></main>
+<script>
+(() => {
+  const copy={zh:{loading:'正在加载藏藏车…',preparing:'正在准备游戏…',play:'轻点进入',note:'首次加载请稍候。进度保存在当前浏览器。',error:'加载未完成，请重试。',retry:'重试',unsupported:'此浏览器暂不支持游戏：',canvas:'藏藏车游戏'},en:{loading:'Loading Peek-a-Vroom…',preparing:'Getting ready…',play:'Tap to play',note:'First load may take a moment. Progress is saved in this browser.',error:'Loading did not finish. Please try again.',retry:'Retry',unsupported:'This browser cannot run the game: ',canvas:'Peek-a-Vroom game'}};
+  let saved;try{saved=localStorage.getItem('peek-vroom-language');}catch{}
+  window.peekVroomLanguageExplicit=['zh','en'].includes(saved);
+  window.peekVroomLanguage=window.peekVroomLanguageExplicit?saved:((navigator.language||'en').toLowerCase().startsWith('zh')?'zh':'en');
+  window.peekVroomLoadState='loading';window.peekVroomLoadPercent=0;
+  window.peekVroomRenderLanguage=()=>{
+    const lang=window.peekVroomLanguage,t=copy[lang];document.documentElement.lang=lang==='zh'?'zh-CN':'en';
+    document.getElementById('language').value=lang;
+    document.getElementById('status').textContent=t[window.peekVroomLoadState]+(window.peekVroomLoadState==='loading'&&window.peekVroomLoadPercent?' '+window.peekVroomLoadPercent+'%':'')+(window.peekVroomMissing||'');
+    document.getElementById('note').textContent=t.note;
+    document.getElementById('play').textContent=t.play;
+    document.getElementById('canvas').setAttribute('aria-label',t.canvas);
+    const retry=document.getElementById('retry');if(retry)retry.textContent=t.retry;
+  };
+  window.peekVroomSyncLanguage=lang=>{
+    if(!['zh','en'].includes(lang))return;
+    window.peekVroomLanguage=lang;
+    try{localStorage.setItem('peek-vroom-language',lang);}catch{}
+    window.peekVroomRenderLanguage();
+  };
+  document.getElementById('language').addEventListener('change',event=>{
+    window.peekVroomLanguageExplicit=true;
+    window.peekVroomSyncLanguage(event.target.value);
+    if(window.peekVroomSetLanguage)window.peekVroomSetLanguage(event.target.value);
+  });
+  window.peekVroomRenderLanguage();
+})();
+</script>
+<script>
+(() => {
+  // A short output gate covers the suspended Web Audio buffer as well as the
+  // first Godot frame. Safari can interrupt audio while gameplay is not ticking.
+  const audioContexts=new Set();
+  const gates=new WeakMap();
+  const nativeConnect=AudioNode.prototype.connect;
+  const nativeDisconnect=AudioNode.prototype.disconnect;
+  AudioNode.prototype.connect=function(destination,...args){
+    const gate=gates.get(this.context);
+    const routed=gate&&destination===this.context.destination&&this!==gate.node?gate.node:destination;
+    const result=nativeConnect.call(this,routed,...args);
+    return routed!==destination&&result===routed?destination:result;
+  };
+  AudioNode.prototype.disconnect=function(...args){
+    const gate=gates.get(this.context);
+    if(args.length&&gate&&args[0]===this.context.destination&&this!==gate.node)args[0]=gate.node;
+    return nativeDisconnect.apply(this,args);
+  };
+  const quiet=context=>{
+    const gate=gates.get(context);if(!gate||context.state==='closed')return;
+    gate.active=false;
+    gate.node.gain.cancelScheduledValues(context.currentTime);
+    gate.node.gain.setValueAtTime(0,context.currentTime);
+  };
+  const recover=context=>{
+    const gate=gates.get(context);if(!gate)return;
+    if(context.state!=='running'||document.hidden){quiet(context);return;}
+    if(gate.active)return;
+    gate.active=true;
+    gate.node.gain.cancelScheduledValues(context.currentTime);
+    gate.node.gain.setValueAtTime(0,context.currentTime);
+    gate.node.gain.linearRampToValueAtTime(1,context.currentTime+.24);
+  };
+  for(const name of ['AudioContext','webkitAudioContext']){
+    const NativeAudioContext=window[name];
+    if(NativeAudioContext){window[name]=new Proxy(NativeAudioContext,{construct(target,args){
+      const context=Reflect.construct(target,args);
+      const node=context.createGain();node.gain.value=0;
+      nativeConnect.call(node,context.destination);
+      gates.set(context,{node,active:false});audioContexts.add(context);
+      const resume=context.resume.bind(context);
+      context.resume=()=>{
+        // Engines may call resume on every click, even while already running.
+        // An ordinary button tap must not dip the continuing music.
+        if(context.state!=='running')quiet(context);
+        return resume().then(()=>recover(context));
+      };
+      context.addEventListener('statechange',()=>{
+        if(context.state==='closed')audioContexts.delete(context);
+        else recover(context);
+      });
+      recover(context);return context;
+    }});}
+  }
+  const unlockAudio=()=>{for(const context of audioContexts){
+    if(document.hidden)continue;
+    if(context.state==='suspended'||context.state==='interrupted')context.resume().catch(()=>{});
+    else recover(context);
+  }};
+  const pauseAudio=()=>{for(const context of audioContexts){
+    quiet(context);
+    if(context.state==='running')context.suspend().catch(()=>{});
+  }};
+  for(const event of ['pointerdown','touchend','keydown'])document.addEventListener(event,unlockAudio,{capture:true,passive:true});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseAudio();else unlockAudio();});
+  window.addEventListener('pagehide',pauseAudio);
+  window.addEventListener('pageshow',unlockAudio);
+})();
+</script>
+<script src="index.js"></script>
+<script>
+'use strict';
+const config={"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"index","mainPack":"index-3f1d248.pck","experimentalVK":false,"fileSizes":{"index.pck":30030892,"index-3f1d248.pck":30030892,"index.wasm":39509339},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const canvas=document.getElementById('canvas'),stage=document.getElementById('stage'),cover=document.getElementById('cover'),status=document.getElementById('status'),progress=document.getElementById('progress'),play=document.getElementById('play');
+function resize(){const box=stage.getBoundingClientRect();const scale=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(box.width*scale);canvas.height=Math.round(box.height*scale);}
+new ResizeObserver(resize).observe(stage);resize();
+const engine=new Engine(config);
+const missing=Engine.getMissingFeatures({threads:false});
+if(missing.length){window.peekVroomLoadState='unsupported';window.peekVroomMissing=missing.join(', ');window.peekVroomRenderLanguage();progress.hidden=true;}
+else engine.startGame({canvas,canvasResizePolicy:0,onProgress:(loaded,total)=>{if(total>0){progress.max=total;progress.value=loaded;window.peekVroomLoadPercent=Math.round(loaded/total*100);window.peekVroomLoadState=loaded>=total?'preparing':'loading';window.peekVroomRenderLanguage();}},onPrintError:(text)=>console.warn(text)}).then(()=>{status.hidden=true;progress.hidden=true;document.getElementById('note').hidden=true;cover.classList.add('play');play.hidden=false;}).catch(error=>{progress.hidden=true;window.peekVroomLoadState='error';window.peekVroomRenderLanguage();const retry=document.createElement('button');retry.id='retry';retry.onclick=()=>location.reload();cover.append(retry);window.peekVroomRenderLanguage();console.error(error);});
+play.addEventListener('click',()=>{cover.style.pointerEvents='none';canvas.focus();cover.animate([{opacity:1},{opacity:0}],{duration:120,easing:'ease-out'}).finished.then(()=>cover.hidden=true).catch(()=>cover.hidden=true);});
+canvas.addEventListener('contextmenu',event=>event.preventDefault());
+</script>
+</body></html>
+
+

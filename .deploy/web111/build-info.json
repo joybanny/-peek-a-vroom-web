@@ -1,0 +1,60 @@
+{
+  "version": "1.1.1",
+  "source_commit": "3f1d2485dc531a5b5da27e27a15cedde874ff331",
+  "engine": "Godot 4.7.stable",
+  "build_kind": "Godot Web 4.7 incremental pack, unchanged base art/audio",
+  "files": {
+    "index.apple-touch-icon.png": {
+      "bytes": 69058,
+      "sha256": "0590a024b5d3ee653984442ae91ca6230af11af149fff875374bb271ad623512"
+    },
+    "index.audio.position.worklet.js": {
+      "bytes": 2973,
+      "sha256": "be33985bc7160d6bf9646f259cd86b259cd67b02ccb297ee5c44f8ac84327bc8"
+    },
+    "index.audio.worklet.js": {
+      "bytes": 7298,
+      "sha256": "5b476a9c9ce642c0ee4256436d1bc31d9c38f868aca0f9a8e2a57c18d2dec2a3"
+    },
+    "index.html": {
+      "bytes": 10363,
+      "sha256": "ca6d8a1b639c2013e30b167c2639468f516b3aec64e32196e29d971d516e4ee8"
+    },
+    "index.icon.png": {
+      "bytes": 471565,
+      "sha256": "69910546480b07fe616ef882b2ff9247e034b39f94798eaa2c6a0750a3a98fdb"
+    },
+    "index.js": {
+      "bytes": 279815,
+      "sha256": "68586d6daafc93c6e697b3fb258976874aa7459b8931165ebb1dc3c9614cc42c"
+    },
+    "index.pck": {
+      "bytes": 30030892,
+      "sha256": "4935bde26be2a05f5f1188835ff5443269e44a20242181605e927c2c2de1da75"
+    },
+    "index.png": {
+      "bytes": 21443,
+      "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e"
+    },
+    "index.wasm": {
+      "bytes": 39509339,
+      "sha256": "7eda98958eb09135a1acb54a4323a00b1a55af1997f15fa1cdc2b93e3df46656"
+    },
+    "optimization.json": {
+      "bytes": 3842,
+      "sha256": "01108dde0502d132af7c24e7033e472286b9ddbf302cc9ee7d0547fa94c45097"
+    },
+    "index-3f1d248.pck": {
+      "bytes": 30030892,
+      "sha256": "4935bde26be2a05f5f1188835ff5443269e44a20242181605e927c2c2de1da75"
+    }
+  },
+  "base_pack_sha256": "a0c3d65702f10e7f44df7dabf88f9f883e485a9c80a36d96c0a47c4d65951ca4",
+  "verification": [
+    "Godot4.7 actual pack boot",
+    "244 gameplay checks",
+    "8 real input checks",
+    "v6 motion integration"
+  ],
+  "save_compatibility": "Same origin, executable name, project.binary and user://save_data.json; no data reset"
+}

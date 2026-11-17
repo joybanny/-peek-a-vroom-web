@@ -1,0 +1,55 @@
+name: Publish verified Web 1.1.1
+on:
+  push:
+    branches: [main]
+    paths: ['.deploy/web111/**', '.github/workflows/publish-web111.yml']
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build byte-preserving game update and verify
+        run: |
+          mkdir _site
+          python3 .deploy/web111/build_patch.py index.pck _site/index.pck
+          python3 - <<'PY'
+          import pathlib,json,hashlib,shutil
+          root=pathlib.Path('.'); stage=root/'.deploy/web111'; out=root/'_site'
+          info=json.loads((stage/'build-info.json').read_text())
+          shutil.copyfile(out/'index.pck',out/'index-3f1d248.pck')
+          for name,entry in info['files'].items():
+              if name.endswith('.pck'):continue
+              src=stage/name if (stage/name).exists() else root/name
+              shutil.copyfile(src,out/name)
+          for name,entry in info['files'].items():
+              f=out/name
+              assert f.stat().st_size==entry['bytes'],name
+              assert hashlib.sha256(f.read_bytes()).hexdigest()==entry['sha256'],name
+          shutil.copyfile(stage/'build-info.json',out/'build-info.json')
+          shutil.copyfile(root/'THIRD_PARTY_LICENSES.txt',out/'THIRD_PARTY_LICENSES.txt')
+          (out/'.nojekyll').touch()
+          PY
+      - name: Persist verified release without overwriting concurrent commits
+        run: |
+          cp _site/* .
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.pck index-3f1d248.pck index.html build-info.json
+          git commit -m "Publish verified Web 1.1.1 speed motion and frozen pools"
+          git push origin HEAD:main
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy verified site
+        id: deployment
+        uses: actions/deploy-pages@v4
