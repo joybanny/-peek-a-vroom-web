@@ -1,8 +1,8 @@
 {
-  "version": "1.1.0",
-  "source_commit": "7000bc97ccff9bf8e61def4f77217d9ca03a57f6",
+  "version": "1.1.1",
+  "source_commit": "3f1d2485dc531a5b5da27e27a15cedde874ff331",
   "engine": "Godot 4.7.stable",
-  "build_kind": "Godot Web non-threaded",
+  "build_kind": "Godot Web 4.7 incremental pack, unchanged base art/audio",
   "files": {
     "index.apple-touch-icon.png": {
       "bytes": 69058,
@@ -17,8 +17,8 @@
       "sha256": "5b476a9c9ce642c0ee4256436d1bc31d9c38f868aca0f9a8e2a57c18d2dec2a3"
     },
     "index.html": {
-      "bytes": 10251,
-      "sha256": "0f00bf99d13d206dec21ed8554e13468cb04e8b4d0250900a1c562e8a9d54408"
+      "bytes": 10363,
+      "sha256": "ca6d8a1b639c2013e30b167c2639468f516b3aec64e32196e29d971d516e4ee8"
     },
     "index.icon.png": {
       "bytes": 471565,
@@ -29,8 +29,8 @@
       "sha256": "68586d6daafc93c6e697b3fb258976874aa7459b8931165ebb1dc3c9614cc42c"
     },
     "index.pck": {
-      "bytes": 28729620,
-      "sha256": "a0c3d65702f10e7f44df7dabf88f9f883e485a9c80a36d96c0a47c4d65951ca4"
+      "bytes": 30030892,
+      "sha256": "4935bde26be2a05f5f1188835ff5443269e44a20242181605e927c2c2de1da75"
     },
     "index.png": {
       "bytes": 21443,
@@ -43,6 +43,18 @@
     "optimization.json": {
       "bytes": 3842,
       "sha256": "01108dde0502d132af7c24e7033e472286b9ddbf302cc9ee7d0547fa94c45097"
+    },
+    "index-3f1d248.pck": {
+      "bytes": 30030892,
+      "sha256": "4935bde26be2a05f5f1188835ff5443269e44a20242181605e927c2c2de1da75"
     }
-  }
+  },
+  "base_pack_sha256": "a0c3d65702f10e7f44df7dabf88f9f883e485a9c80a36d96c0a47c4d65951ca4",
+  "verification": [
+    "Godot4.7 actual pack boot",
+    "244 gameplay checks",
+    "8 real input checks",
+    "v6 motion integration"
+  ],
+  "save_compatibility": "Same origin, executable name, project.binary and user://save_data.json; no data reset"
 }
